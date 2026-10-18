@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ตารางยา</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f6fb; --card:#ffffff; --ink:#1c1b4b; --muted:#5d6385; --line:#c9cfe6;
+  --blue:#2b2a9a; --done:#1f8a4c; --done-bg:#e3f5ea; --warn:#a15c00; --warn-bg:#fff1d6;
+  --heart:#b3261e; --sugar:#2b2a9a; --lung:#00746f; --eye:#6b3fa0;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#12132b; --card:#1b1d3d; --ink:#eceefb; --muted:#a3a8cc; --line:#3a3e6e;
+    --blue:#9ea0ff; --done:#5fd08a; --done-bg:#16382a; --warn:#ffc266; --warn-bg:#3d2d0f;
+    --heart:#ff8f87; --sugar:#9ea0ff; --lung:#5fd6cf; --eye:#c9a6f5;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Sarabun",system-ui,sans-serif;font-size:17px;line-height:1.45}
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:8px 0 12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--card);border:2px solid var(--line);border-radius:12px;padding:12px}
+.bar label{font-weight:700}
+.bar input[type=date]{font:inherit;padding:8px 10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+button{font:inherit;cursor:pointer;padding:8px 14px;border:2px solid var(--blue);border-radius:8px;background:transparent;color:var(--blue);font-weight:500}
+button:hover{background:var(--blue);color:var(--card)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.thaidate{flex-basis:100%;color:var(--muted)}
+.progress{margin:14px 0 6px;display:flex;align-items:center;gap:12px}
+.track{flex:1;height:14px;background:var(--line);border-radius:7px;overflow:hidden}
+.fill{height:100%;width:0;background:var(--done);transition:width .25s}
+#status{font-size:.9rem;color:var(--muted)}
+#status.err{color:var(--heart);font-weight:700}
+.scroll{overflow-x:auto;background:var(--card);border:2px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{border:1px solid var(--line);padding:8px;text-align:center}
+thead th{background:var(--bg);font-weight:700}
+th.name,td.name{text-align:left;min-width:190px}
+td.name .no{color:var(--muted);margin-right:8px}
+td.name .n{font-weight:700}
+.tag{display:inline-block;font-size:.8rem;padding:1px 8px;border-radius:10px;border:1px solid currentColor;margin-left:6px;white-space:nowrap}
+.tag.เบาหวาน{color:var(--sugar)} .tag.หัวใจ{color:var(--heart)} .tag.หลอดลม{color:var(--lung)} .tag.ตา{color:var(--eye)}
+.cond{display:block;margin-top:3px;font-size:.82rem;color:var(--warn);background:var(--warn-bg);padding:1px 8px;border-radius:6px;width:fit-content}
+td.none{color:var(--line)}
+td.cell{padding:0}
+td.cell label{display:flex;align-items:center;justify-content:center;min-height:56px;cursor:pointer}
+td.cell input{width:28px;height:28px;accent-color:var(--done);cursor:pointer}
+td.cell.on{background:var(--done-bg)}
+tr.alldone td.name .n{text-decoration:line-through;color:var(--muted)}
+.hint{margin:12px 2px;color:var(--muted);font-size:.9rem}
+td.cell{position:relative}
+td.cell label{min-height:68px;padding-bottom:14px}
+.notebtn{position:absolute;right:3px;bottom:3px;padding:0 7px;min-height:26px;font-size:.85rem;border-width:1px;border-color:var(--line);color:var(--muted);border-radius:6px}
+td.hasnote{box-shadow:inset 0 0 0 3px var(--warn)}
+td.hasnote .notebtn{border-color:var(--warn);color:var(--warn);background:var(--warn-bg)}
+#notebox{margin-top:14px;background:var(--card);border:2px solid var(--warn);border-radius:12px;padding:10px 16px}
+#notebox h2{font-size:1.05rem;margin:4px 0 6px;color:var(--warn)}
+#notebox ul{margin:0;padding-left:20px}
+#notebox li{margin:4px 0}
+dialog{border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);width:min(440px,92vw);padding:18px;font:inherit}
+dialog::backdrop{background:rgba(10,10,40,.5)}
+dialog h3{margin:0 0 4px;font-size:1.1rem}
+dialog p{margin:0 0 10px;color:var(--muted);font-size:.9rem}
+dialog textarea{width:100%;min-height:110px;font:inherit;padding:10px;border:2px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);resize:vertical}
+dialog textarea:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.dlgbtns{display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap}
+.dlgbtns .primary{background:var(--blue);color:var(--card)}
+.dlgbtns .danger{border-color:var(--heart);color:var(--heart)}
+.dlgbtns .danger:hover{background:var(--heart);color:var(--card)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ตารางยา</h1>
+
+  <div class="bar">
+    <label for="date">วันที่</label>
+    <input type="date" id="date">
+    <button id="prev" aria-label="วันก่อนหน้า">◀ เมื่อวาน</button>
+    <button id="today">วันนี้</button>
+    <button id="next" aria-label="วันถัดไป">พรุ่งนี้ ▶</button>
+    <button id="dbtest" title="เขียน อ่าน และลบข้อมูลทดสอบ เพื่อเช็กว่า Firestore ใช้งานได้">ทดสอบฐานข้อมูล</button>
+    <div class="thaidate" id="thaidate"></div>
+  </div>
+
+  <div class="progress">
+    <div class="track"><div class="fill" id="fill"></div></div>
+    <strong id="count">0/0</strong>
+  </div>
+  <div id="status">กำลังเชื่อมต่อ...</div>
+
+  <div class="scroll" style="margin-top:10px">
+    <table>
+      <thead>
+        <tr>
+          <th class="name" rowspan="2">ชื่อยา</th>
+          <th colspan="2">เช้า</th>
+          <th rowspan="2">กลางวัน</th>
+          <th colspan="2">เย็น</th>
+          <th>ก่อนนอน</th>
+        </tr>
+        <tr>
+          <th>ก่อนอาหาร</th><th>หลังอาหาร</th>
+          <th>ก่อนอาหาร</th><th>หลังอาหาร</th>
+          <th>ก่อนนอน</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+  <div id="notebox" hidden>
+    <h2>หมายเหตุของวันนี้</h2>
+    <ul id="notelist"></ul>
+  </div>
+  <p class="hint">ติ๊กในคอมหรือโทรศัพท์ ข้อมูลจะตรงกันทันทีในทุกเครื่อง · กดปุ่ม ＋ มุมล่างขวาของช่องเพื่อจดว่ากินไม่ได้เพราะอะไร</p>
+
+  <dialog id="notedlg">
+    <h3 id="notetitle"></h3>
+    <p>ตอนนั้นกินยาตัวนี้ไม่ได้เพราะอะไร</p>
+    <textarea id="notetext" maxlength="500" placeholder="เช่น ลืมกิน, คลื่นไส้, ยาหมด, หมอให้งด"></textarea>
+    <div class="dlgbtns">
+      <button type="button" id="notedel" class="danger">ลบหมายเหตุ</button>
+      <button type="button" id="notecancel">ยกเลิก</button>
+      <button type="button" id="notesave" class="primary">บันทึก</button>
+    </div>
+  </dialog>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ---------- รายการยา (แก้ไขที่นี่) ----------
+   slots: bb=ก่อนอาหารเช้า, ab=หลังอาหารเช้า, bd=ก่อนอาหารเย็น, ad=หลังอาหารเย็น, bed=ก่อนนอน */
+const SLOTS = ["bb","ab","nn","bd","ad","bed"];   // nn=กลางวัน
+const DRUGS = [
+  {id:"glipizide", name:"Glipizide",     type:"เบาหวาน", slots:["bb","bd"]},
+  {id:"folivit",   name:"FOLIVIT",       type:"เบาหวาน", slots:["ab"]},
+  {id:"glucophage",name:"GLUCOPHAGE",    type:"เบาหวาน", slots:["ab"]},
+  {id:"glyxambi",  name:"glyXAMBI",      type:"เบาหวาน", slots:["ab"]},
+  {id:"concor",    name:"CONCOR",        type:"หัวใจ",   slots:["ab"], cond:true},
+  {id:"lixiana",   name:"LIXIANA",       type:"หัวใจ",   slots:["ab"]},
+  {id:"furetic",   name:"FURETIC",       type:"หัวใจ",   slots:["ab"]},
+  {id:"aldactone", name:"ALDACTONE",     type:"หัวใจ",   slots:["ab"]},
+  {id:"entresto",  name:"ENTRESTO",      type:"หัวใจ",   slots:["ab"], cond:true},
+  {id:"naclong",   name:"NAC-LONG",      type:"หลอดลม",  slots:["ab"]},
+  {id:"consopt",   name:"CONSOPT-S",     type:"ตา",      slots:["ab","ad"], note:"ยาหยอดตาซ้าย"},
+  {id:"opitive",   name:"OPITIVE",       type:"ตา",      slots:["ab","nn","ad","bed"], note:"น้ำตาเทียม"},
+  {id:"cordarone", name:"CORDARONE",     type:"หัวใจ",   slots:["ad"], cond:true},
+  {id:"chlovas",   name:"CHLOVAS",       type:"เบาหวาน", slots:["ad"]},
+  {id:"vidisic",   name:"VIDISIC eye gel",type:"ตา",     slots:["bed"], note:"เจลหยอดตา"},
+  {id:"montex",    name:"MONTEX",        type:"หลอดลม",  slots:["bed"]},
+  {id:"bilaxten",  name:"BILAXTEN",      type:"หลอดลม",  slots:["bed"]},
+  {id:"relvar",    name:"RELVAR",        type:"หลอดลม",  slots:["bed"]}
+];
+
+/* ---------- Firebase ---------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyCNu6zWViBa6UW7jKxVHlU-ANAUC6ok130",
+  authDomain: "med-tracker-8c57e.firebaseapp.com",
+  databaseURL: "https://med-tracker-8c57e-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "med-tracker-8c57e",
+  storageBucket: "med-tracker-8c57e.firebasestorage.app",
+  messagingSenderId: "117717293204",
+  appId: "1:117717293204:web:c3f03f802fff2ac60a3c81",
+  measurementId: "G-K08BH57EQY"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* ---------- สถานะ ---------- */
+let checks = {};      // {"glipizide_bb": true, ...}
+let unsub = null;
+let notes = {};       // {"glipizide_bb": "ลืมกิน", ...}
+let noteKey = null;
+const SLOT_LABEL = {bb:"ก่อนอาหารเช้า", ab:"หลังอาหารเช้า", nn:"กลางวัน", bd:"ก่อนอาหารเย็น", ad:"หลังอาหารเย็น", bed:"ก่อนนอน"};
+const $ = id => document.getElementById(id);
+const dateInput = $("date");
+
+const pad = n => String(n).padStart(2,"0");
+const toISO = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const fromISO = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+
+function showThaiDate(){
+  const d = fromISO(dateInput.value);
+  $("thaidate").textContent = d.toLocaleDateString("th-TH",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+}
+
+function buildRows(){
+  const tb = $("rows");
+  tb.innerHTML = "";
+  DRUGS.forEach((d,i)=>{
+    const tr = document.createElement("tr");
+    tr.id = "row_"+d.id;
+    const nm = document.createElement("td");
+    nm.className = "name";
+    nm.innerHTML = `<span class="no">${i+1}</span><span class="n"></span><span class="tag ${d.type}"></span>`
+      + (d.note ? `<div style="font-size:.85rem;color:var(--muted)"></div>` : "")
+      + (d.cond ? `<span class="cond">มีเงื่อนไขการกิน</span>` : "");
+    nm.querySelector(".n").textContent = d.name;
+    nm.querySelector(".tag").textContent = d.type;
+    if(d.note) nm.querySelector("div").textContent = d.note;
+    tr.appendChild(nm);
+    SLOTS.forEach(s=>{
+      const td = document.createElement("td");
+      if(d.slots.includes(s)){
+        td.className = "cell";
+        td.dataset.key = d.id+"_"+s;
+        const lb = document.createElement("label");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.setAttribute("aria-label", `${d.name} ${s}`);
+        cb.addEventListener("change", ()=> toggle(d.id+"_"+s, cb.checked));
+        lb.appendChild(cb); td.appendChild(lb);
+        const nb = document.createElement("button");
+        nb.type = "button"; nb.className = "notebtn"; nb.textContent = "＋";
+        nb.addEventListener("click", ()=> openNote(d.id+"_"+s));
+        td.appendChild(nb);
+      } else {
+        td.className = "none"; td.textContent = "–";
+      }
+      tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+}
+
+function render(){
+  let total = 0, done = 0;
+  document.querySelectorAll("td.cell").forEach(td=>{
+    const on = !!checks[td.dataset.key];
+    td.classList.toggle("on", on);
+    td.querySelector("input").checked = on;
+    total++; if(on) done++;
+  });
+  DRUGS.forEach(d=>{
+    const all = d.slots.every(s=>checks[d.id+"_"+s]);
+    $("row_"+d.id).classList.toggle("alldone", all);
+  });
+  $("count").textContent = `${done}/${total}`;
+  renderNotes();
+  $("fill").style.width = total ? (done/total*100)+"%" : "0";
+}
+
+function setStatus(msg, err){
+  const s = $("status"); s.textContent = msg; s.className = err ? "err" : "";
+}
+
+/* ---------- ซิงค์กับ Firestore ---------- */
+function toggle(key, val){
+  checks[key] = val; render();           // อัปเดตหน้าจอทันที
+  const iso = dateInput.value;
+  db.collection("medLogs").doc(iso)
+    .set({checks:{[key]:val}, updatedAt: firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
+    .catch(e=>{ setStatus("บันทึกไม่สำเร็จ: "+e.message, true); });
+}
+
+function listen(){
+  if(unsub) unsub();
+  checks = {}; notes = {}; render();
+  setStatus("กำลังโหลด...");
+  unsub = db.collection("medLogs").doc(dateInput.value).onSnapshot(snap=>{
+    checks = (snap.exists && snap.data().checks) || {};
+    notes = (snap.exists && snap.data().notes) || {};
+    render();
+    setStatus("ซิงค์แล้ว ✓");
+  }, e=> setStatus("เชื่อมต่อไม่ได้: "+e.message, true));
+}
+
+function goto(iso){
+  dateInput.value = iso;
+  showThaiDate();
+  listen();
+}
+function shift(n){
+  const d = fromISO(dateInput.value); d.setDate(d.getDate()+n); goto(toISO(d));
+}
+
+/* ---------- หมายเหตุ ---------- */
+function renderNotes(){
+  document.querySelectorAll("td.cell").forEach(td=>{
+    const has = !!(notes[td.dataset.key] || "").trim();
+    td.classList.toggle("hasnote", has);
+    const b = td.querySelector(".notebtn");
+    b.textContent = has ? "📝" : "＋";
+    b.title = has ? "ดู/แก้หมายเหตุ" : "เพิ่มหมายเหตุ (กินไม่ได้เพราะอะไร)";
+  });
+  const list = $("notelist"); list.innerHTML = "";
+  let n = 0;
+  DRUGS.forEach(d=>d.slots.forEach(s=>{
+    const t = (notes[d.id+"_"+s] || "").trim();
+    if(!t) return;
+    n++;
+    const li = document.createElement("li");
+    const b = document.createElement("b");
+    b.textContent = `${d.name} (${SLOT_LABEL[s]}): `;
+    li.appendChild(b);
+    li.appendChild(document.createTextNode(t));
+    list.appendChild(li);
+  }));
+  $("notebox").hidden = (n === 0);
+}
+
+function openNote(key){
+  noteKey = key;
+  const [id, slot] = key.split("_");
+  const d = DRUGS.find(x=>x.id === id);
+  $("notetitle").textContent = `${d.name} – ${SLOT_LABEL[slot]}`;
+  $("notetext").value = notes[key] || "";
+  $("notedel").style.display = notes[key] ? "" : "none";
+  $("notedlg").showModal();
+  $("notetext").focus();
+}
+
+function saveNote(text){
+  const t = text.trim();
+  if(t) notes[noteKey] = t; else delete notes[noteKey];
+  renderNotes();
+  $("notedlg").close();
+  db.collection("medLogs").doc(dateInput.value).set({
+    notes: {[noteKey]: t ? t : firebase.firestore.FieldValue.delete()},
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true}).catch(e=>{ setStatus("บันทึกหมายเหตุไม่สำเร็จ: "+e.message, true); });
+}
+
+/* ---------- ทดสอบฐานข้อมูล ---------- */
+$("dbtest").onclick = async ()=>{
+  const ref = db.collection("medLogs").doc("_connection-test");
+  const stamp = String(Date.now());
+  try{
+    setStatus("ทดสอบ 1/3: กำลังเขียน...");
+    await ref.set({stamp});
+    setStatus("ทดสอบ 2/3: กำลังอ่านกลับจากเซิร์ฟเวอร์...");
+    const snap = await ref.get({source:"server"});
+    if(!snap.exists || snap.data().stamp !== stamp) throw new Error("อ่านค่ากลับมาไม่ตรงกับที่เขียน");
+    setStatus("ทดสอบ 3/3: กำลังลบข้อมูลทดสอบ...");
+    await ref.delete();
+    setStatus("ทดสอบผ่าน ✓ เขียน อ่าน ลบ ได้ปกติ ซิงค์ใช้งานได้");
+  }catch(e){
+    let hint = "";
+    if(e.code === "permission-denied") hint = " (ไปแก้ Rules ใน Firestore ให้อนุญาต medLogs)";
+    else if(e.code === "unavailable" || /offline/i.test(e.message)) hint = " (เช็กอินเทอร์เน็ต หรือยังไม่ได้สร้าง Firestore Database)";
+    setStatus("ทดสอบไม่ผ่าน: "+(e.code||"")+" "+e.message+hint, true);
+  }
+};
+
+$("notesave").onclick = ()=> saveNote($("notetext").value);
+$("notedel").onclick = ()=> saveNote("");
+$("notecancel").onclick = ()=> $("notedlg").close();
+
+dateInput.addEventListener("change", ()=>{ if(dateInput.value) goto(dateInput.value); });
+$("prev").onclick = ()=>shift(-1);
+$("next").onclick = ()=>shift(1);
+$("today").onclick = ()=>goto(toISO(new Date()));
+
+buildRows();
+goto(toISO(new Date()));
+</script>
+</body>
+</html>
